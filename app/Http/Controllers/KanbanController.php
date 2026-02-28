@@ -84,4 +84,17 @@ class KanbanController extends Controller
         return redirect()->back();
     }
 
+    public function destroy($id)
+    {
+        $activity = Activity::findOrFail($id);
+
+        // Seguridad: Solo el dueño o el administrador pueden borrar
+        if (auth()->user()->hasRole('administrador') || $activity->user_id === auth()->id()) {
+            $activity->delete();
+            return redirect()->back();
+        }
+
+        return response()->json(['message' => 'No tienes permiso para eliminar esta tarea'], 403);
+    }
+
 }

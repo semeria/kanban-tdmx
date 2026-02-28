@@ -16,9 +16,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
 Route::put('/kanban/{id}/status', [KanbanController::class, 'updateStatus'])->name('kanban.updateStatus');
-Route::post('/kanban', [KanbanController::class, 'store'])->name('kanban.store');
 Route::put('/kanban/{id}/priority', [KanbanController::class, 'updatePriority'])->name('kanban.updatePriority');
 Route::put('/kanban/{id}/title', [KanbanController::class, 'updateTitle'])->name('kanban.updateTitle');
+Route::post('/kanban', [KanbanController::class, 'store'])->name('kanban.store');
+Route::delete('/kanban/{id}', [KanbanController::class, 'destroy'])->name('kanban.destroy');
 
 Route::get('/categorias', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categorias', [CategoryController::class, 'store'])->name('categories.store');

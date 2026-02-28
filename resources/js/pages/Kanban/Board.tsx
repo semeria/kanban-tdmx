@@ -1,8 +1,18 @@
 import type { DropResult } from '@hello-pangea/dnd';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { router, useForm, Head } from '@inertiajs/react';
+import { useForm, Head, router } from '@inertiajs/react';
+import {
+    User,
+    Star,
+    Zap,
+    Smile,
+    Heart,
+    Coffee,
+    Shield,
+    Rocket,
+    Trash2,
+} from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { User, Star, Zap, Smile, Heart, Coffee, Shield, Rocket } from 'lucide-react';
 
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -31,7 +41,6 @@ const getUserIconAndColor = (userId: number) => {
     return { Icon, colorClass };
 };
 
-// --- CAMBIO 1: Recibimos las categories como propiedad ---
 export default function Board({
     activities = [],
     categories = [],
@@ -115,7 +124,9 @@ export default function Board({
         });
         router.put(
             `/kanban/${draggableId}/status`,
-            { status: destination.droppableId },
+            {
+                status: destination.droppableId,
+            },
             {
                 preserveScroll: true,
                 onSuccess: () =>
@@ -129,16 +140,19 @@ export default function Board({
         newPriority: string,
         columnId: string,
     ) => {
-        // ... (Mantén tu lógica handlePriorityChange intacta)
+        // Actualización visual local (ya la tienes)
         const updatedColumns = { ...columns };
         const itemIndex = updatedColumns[columnId].items.findIndex(
             (i: any) => i.id === activityId,
         );
         updatedColumns[columnId].items[itemIndex].priority = newPriority;
         setColumns(updatedColumns);
+
         router.put(
             `/kanban/${activityId}/priority`,
-            { priority: newPriority },
+            {
+                priority: newPriority,
+            },
             {
                 preserveScroll: true,
                 onSuccess: () => showNotification('Prioridad actualizada 🚀'),
@@ -164,12 +178,28 @@ export default function Board({
         setColumns(updatedColumns);
         router.put(
             `/kanban/${activityId}/title`,
-            { title: newTitle },
+            {
+                title: newTitle,
+            },
             {
                 preserveScroll: true,
                 onSuccess: () => showNotification('Título actualizado 📝'),
             },
         );
+    };
+
+    const handleDelete = (activityId: number) => {
+        if (
+            confirm(
+                '¿Estás seguro de que deseas eliminar esta actividad? Esta acción no se puede deshacer.',
+            )
+        ) {
+            router.delete(`/kanban/${activityId}`, {
+                preserveScroll: true,
+                onSuccess: () =>
+                    showNotification('Actividad eliminada correctamente 🗑️'),
+            });
+        }
     };
 
     return (
@@ -291,7 +321,7 @@ export default function Board({
                             ([columnId, column]: [string, any]) => (
                                 <div
                                     key={columnId}
-                                    className="flex min-w-[300px] flex-1 flex-col rounded-xl border border-sidebar-border/50 bg-white shadow-sm dark:border-sidebar-border dark:bg-neutral-900"
+                                    className="flex min-w-75 flex-1 flex-col rounded-xl border border-sidebar-border/50 bg-white shadow-sm dark:border-sidebar-border dark:bg-neutral-900"
                                 >
                                     <div className="border-b border-sidebar-border/50 px-4 py-3 text-center dark:border-sidebar-border">
                                         <h2 className="font-semibold text-neutral-800 dark:text-neutral-200">
@@ -325,42 +355,62 @@ export default function Board({
                                                                     }
                                                                     {...provided.draggableProps}
                                                                     {...provided.dragHandleProps}
-                                                                    className={`mb-3 rounded-lg border border-sidebar-border/50 p-4 shadow-sm transition-shadow select-none dark:border-sidebar-border ${snapshot.isDragging ? 'bg-blue-50/50 ring-1 ring-blue-500/50 dark:bg-neutral-800' : 'bg-white dark:bg-neutral-950'}`}
+                                                                    className={`group mb-3 rounded-lg border border-sidebar-border/50 p-4 shadow-sm transition-shadow select-none dark:border-sidebar-border ${snapshot.isDragging ? 'bg-blue-50/50 ring-1 ring-blue-500/50 dark:bg-neutral-800' : 'bg-white dark:bg-neutral-950'}`}
                                                                     style={{
                                                                         ...provided
                                                                             .draggableProps
                                                                             .style,
                                                                     }}
                                                                 >
-                                                                    {/* Título editable */}
-                                                                    <input
-                                                                        type="text"
-                                                                        defaultValue={
-                                                                            item.title
-                                                                        }
-                                                                        onBlur={(
-                                                                            e,
-                                                                        ) =>
-                                                                            handleTitleChange(
-                                                                                item.id,
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                                columnId,
-                                                                            )
-                                                                        }
-                                                                        onKeyDown={(
-                                                                            e,
-                                                                        ) => {
-                                                                            if (
-                                                                                e.key ===
-                                                                                'Enter'
-                                                                            )
-                                                                                e.currentTarget.blur();
-                                                                        }}
-                                                                        className="-ml-1 w-full rounded bg-transparent px-1 font-semibold text-neutral-900 transition-colors hover:bg-neutral-100 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus:bg-neutral-950"
-                                                                        title="Haz clic para editar"
-                                                                    />
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <input
+                                                                            type="text"
+                                                                            defaultValue={
+                                                                                item.title
+                                                                            }
+                                                                            onBlur={(
+                                                                                e,
+                                                                            ) =>
+                                                                                handleTitleChange(
+                                                                                    item.id,
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                                    columnId,
+                                                                                )
+                                                                            }
+                                                                            onKeyDown={(
+                                                                                e,
+                                                                            ) => {
+                                                                                if (
+                                                                                    e.key ===
+                                                                                    'Enter'
+                                                                                ) {
+                                                                                    e.preventDefault(); // Evita que el navegador intente hacer un "submit" tradicional
+                                                                                    e.currentTarget.blur();
+                                                                                }
+                                                                            }}
+                                                                            className="-ml-1 flex-1 rounded bg-transparent px-1 font-semibold text-neutral-900 transition-colors hover:bg-neutral-100 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus:bg-neutral-950"
+                                                                            title="Haz clic para editar"
+                                                                        />
+
+                                                                        {/* Botón de eliminar (aparece con un efecto hover suave gracias a la clase 'group' en el padre) */}
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleDelete(
+                                                                                    item.id,
+                                                                                )
+                                                                            }
+                                                                            className="p-1 text-neutral-400 opacity-0 transition-colors group-hover:opacity-100 hover:text-red-500 focus:opacity-100"
+                                                                            title="Eliminar tarea"
+                                                                        >
+                                                                            <Trash2
+                                                                                size={
+                                                                                    14
+                                                                                }
+                                                                            />
+                                                                        </button>
+                                                                    </div>
 
                                                                     <div className="mt-3 flex items-center justify-between">
                                                                         <label className="text-xs text-neutral-500 dark:text-neutral-400">

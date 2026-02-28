@@ -1,15 +1,6 @@
 import { Link } from '@inertiajs/react';
-// --- CAMBIO 1: Agregamos los iconos Kanban y Tags ---
-import {
-    BookOpen,
-    FolderGit2,
-    LayoutGrid,
-    Kanban,
-    Tags,
-    BarChart3,
-} from 'lucide-react';
+import { LayoutGrid, Kanban, Tags, BarChart3 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -24,7 +15,7 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-// --- CAMBIO 2: Agregamos las rutas a nuestro menú principal ---
+// Nuestro menú principal intacto
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -39,25 +30,12 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Tablero Kanban',
         href: '/kanban',
-        icon: Kanban, // Icono de lucide-react
+        icon: Kanban,
     },
     {
         title: 'Categorías',
         href: '/categorias',
-        icon: Tags, // Icono de lucide-react
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        icon: Tags,
     },
 ];
 
@@ -81,7 +59,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
