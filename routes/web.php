@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\MetricsController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -22,5 +23,7 @@ Route::put('/kanban/{id}/title', [KanbanController::class, 'updateTitle'])->name
 Route::get('/categorias', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categorias', [CategoryController::class, 'store'])->name('categories.store');
 Route::put('/categorias/{id}', [CategoryController::class, 'update'])->name('categories.update');
+
+Route::get('/metricas', [MetricsController::class, 'index'])->name('metrics.index');
 
 require __DIR__.'/settings.php';

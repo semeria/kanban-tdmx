@@ -1,6 +1,13 @@
 import { Link } from '@inertiajs/react';
 // --- CAMBIO 1: Agregamos los iconos Kanban y Tags ---
-import { BookOpen, FolderGit2, LayoutGrid, Kanban, Tags } from 'lucide-react';
+import {
+    BookOpen,
+    FolderGit2,
+    LayoutGrid,
+    Kanban,
+    Tags,
+    BarChart3,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -23,6 +30,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Métricas',
+        href: '/metricas',
+        icon: BarChart3,
     },
     {
         title: 'Tablero Kanban',
