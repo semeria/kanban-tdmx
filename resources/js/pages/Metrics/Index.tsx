@@ -1,11 +1,11 @@
 import { Head } from '@inertiajs/react';
+import { Target, ListTodo, Clock, CheckCircle2 } from 'lucide-react';
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { Target, ListTodo, Clock, CheckCircle2 } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Métricas y Gráficas', href: '/metricas' },
+    { title: 'Inicio / Métricas', href: '/metricas' },
 ];
 
 export default function MetricsIndex({ metrics }: { metrics: any }) {

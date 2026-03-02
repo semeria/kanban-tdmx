@@ -18,11 +18,6 @@ import type { NavItem } from '@/types';
 // Nuestro menú principal intacto
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
         title: 'Métricas',
         href: '/metricas',
         icon: BarChart3,
@@ -46,7 +41,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href="/metricas" prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
