@@ -1,6 +1,6 @@
 import type { DropResult } from '@hello-pangea/dnd';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { useForm, Head, router } from '@inertiajs/react';
+import { useForm, Head, router, usePage } from '@inertiajs/react';
 import {
     User,
     Star,
@@ -44,12 +44,17 @@ const getUserIconAndColor = (userId: number) => {
 export default function Board({
     activities = [],
     categories = [],
+    users = []
 }: {
     activities: any[];
     categories: any[];
+    users : any[];
 }) {
     const [notification, setNotification] = useState<string | null>(null);
-
+    const { auth } = usePage().props as any;
+    const canAssign = auth.roles?.some((role: string) =>
+        ['administrador', 'gerencia'].includes(role),
+    );
     const showNotification = (message: string) => {
         setNotification(message);
         setTimeout(() => setNotification(null), 3000);
@@ -73,6 +78,21 @@ export default function Board({
                 showNotification('Actividad creada exitosamente 🎉');
             },
         });
+    };
+
+    const handleAssignUser = (activityId: number, newUserId: string) => {
+        router.put(
+            `/kanban/${activityId}/assign`,
+            {
+                // Convertimos a número o a null si eligió "Sin asignar"
+                assigned_user_id: newUserId ? parseInt(newUserId) : null,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () =>
+                    showNotification('Usuario asignado correctamente 👤'),
+            },
+        );
     };
 
     const [columns, setColumns] = useState<any>({
@@ -393,23 +413,15 @@ export default function Board({
                                                                             className="-ml-1 flex-1 rounded bg-transparent px-1 font-semibold text-neutral-900 transition-colors hover:bg-neutral-100 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus:bg-neutral-950"
                                                                             title="Haz clic para editar"
                                                                         />
-
-                                                                        {/* Botón de eliminar (aparece con un efecto hover suave gracias a la clase 'group' en el padre) */}
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                handleDelete(
-                                                                                    item.id,
-                                                                                )
-                                                                            }
-                                                                            className="p-1 text-neutral-400 opacity-0 transition-colors group-hover:opacity-100 hover:text-red-500 focus:opacity-100"
-                                                                            title="Eliminar tarea"
-                                                                        >
-                                                                            <Trash2
-                                                                                size={
-                                                                                    14
-                                                                                }
-                                                                            />
-                                                                        </button>
+                                                                        {(canAssign || item.user_id === auth.user.id) && (
+                                                                            <button
+                                                                                onClick={() => handleDelete(item.id)}
+                                                                                className="text-neutral-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                                                                title="Eliminar tarea"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                            </button>
+                                                                        )}
                                                                     </div>
 
                                                                     <div className="mt-3 flex items-center justify-between">
@@ -496,6 +508,95 @@ export default function Board({
                                                                             <span className="text-xs text-neutral-500">
                                                                                 Sin
                                                                                 asignar
+                                                                            </span>
+                                                                        )}
+                                                                        {item.assigned_user ? (
+                                                                            (() => {
+                                                                                const {
+                                                                                    Icon,
+                                                                                    colorClass,
+                                                                                } =
+                                                                                    getUserIconAndColor(
+                                                                                        item
+                                                                                            .assigned_user
+                                                                                            .id,
+                                                                                    );
+                                                                                return (
+                                                                                    <div
+                                                                                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${colorClass}`}
+                                                                                    >
+                                                                                        <Icon
+                                                                                            size={
+                                                                                                12
+                                                                                            }
+                                                                                            strokeWidth={
+                                                                                                2.5
+                                                                                            }
+                                                                                        />
+                                                                                    </div>
+                                                                                );
+                                                                            })()
+                                                                        ) : (
+                                                                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 dark:bg-neutral-800">
+                                                                                <User
+                                                                                    size={
+                                                                                        12
+                                                                                    }
+                                                                                    strokeWidth={
+                                                                                        2.5
+                                                                                    }
+                                                                                />
+                                                                            </div>
+                                                                        )}
+
+                                                                        {canAssign ? (
+                                                                            <select
+                                                                                className="h-7 cursor-pointer appearance-none rounded-md border-transparent bg-transparent py-0 pr-6 pl-1 text-xs font-medium text-neutral-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-transparent dark:text-neutral-400 dark:focus:border-blue-500"
+                                                                                value={
+                                                                                    item.assigned_user_id ||
+                                                                                    ''
+                                                                                }
+                                                                                onChange={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    handleAssignUser(
+                                                                                        item.id,
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <option value="">
+                                                                                    Sin
+                                                                                    asignar
+                                                                                </option>
+                                                                                {users.map(
+                                                                                    (
+                                                                                        u: any,
+                                                                                    ) => (
+                                                                                        <option
+                                                                                            key={
+                                                                                                u.id
+                                                                                            }
+                                                                                            value={
+                                                                                                u.id
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                u.name
+                                                                                            }
+                                                                                        </option>
+                                                                                    ),
+                                                                                )}
+                                                                            </select>
+                                                                        ) : (
+                                                                            <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                                                                                {item.assigned_user
+                                                                                    ? item
+                                                                                          .assigned_user
+                                                                                          .name
+                                                                                    : 'Sin asignar'}
                                                                             </span>
                                                                         )}
                                                                     </div>

@@ -9,7 +9,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function MetricsIndex({ metrics }: { metrics: any }) {
-    // --- CÁLCULO PARA GRÁFICA CIRCULAR (AVANCE) ---
     const totalTasks = metrics.total || 0;
     const doneTasks = metrics.done || 0;
     const progressPercentage =
@@ -19,20 +18,15 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
     const strokeDashoffset =
         circleCircumference - (progressPercentage / 100) * circleCircumference;
 
-    // --- NUEVO: CÁLCULOS PARA GRÁFICA DE BARRAS (PRIORIDAD) ---
     const high = metrics.priority_high || 0;
     const medium = metrics.priority_medium || 0;
     const low = metrics.priority_low || 0;
 
-    // Encontramos el valor máximo para calcular la altura del 100% de la barra
-    // Usamos || 1 para evitar divisiones por cero si todas están vacías
     const maxPriority = Math.max(high, medium, low) || 1;
 
-    // Calculamos el % de altura que ocupará cada barra en el recuadro
     const highHeight = (high / maxPriority) * 100;
     const mediumHeight = (medium / maxPriority) * 100;
     const lowHeight = (low / maxPriority) * 100;
-    // ------------------------------------------------------------
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -115,9 +109,7 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                     </div>
                 </div>
 
-                {/* 2. Sección de Gráficas */}
                 <div className="mt-4 grid gap-6 md:grid-cols-2">
-                    {/* Gráfica Circular: Avance */}
                     <div
                         className="relative flex flex-col items-center justify-center overflow-hidden rounded-xl p-6 shadow-sm"
                         style={{ backgroundColor: '#0A4A6B' }}
@@ -158,9 +150,6 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                             {doneTasks} de {totalTasks} tareas completadas
                         </p>
                     </div>
-
-                    {/* --- NUEVA GRÁFICA DE BARRAS: Actividades por Prioridad --- */}
-                    {/* --- NUEVA GRÁFICA DE BARRAS: Actividades por Prioridad --- */}
                     <div
                         className="relative flex flex-col rounded-xl p-6 shadow-sm"
                         style={{ backgroundColor: '#0B5D45' }}
@@ -171,9 +160,7 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                             </h3>
                         </div>
 
-                        {/* 1. Contenedor de las barras y la línea base (Eje Y) */}
                         <div className="flex h-48 w-full items-end justify-center gap-6 border-b border-l border-white/40 pr-4 pl-4 sm:gap-12">
-                            {/* Barra: Alta */}
                             <div className="flex h-full w-12 flex-col items-center justify-end sm:w-16">
                                 <span className="mb-2 text-lg font-bold text-white">
                                     {high}
@@ -187,7 +174,6 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                                 ></div>
                             </div>
 
-                            {/* Barra: Media */}
                             <div className="flex h-full w-12 flex-col items-center justify-end sm:w-16">
                                 <span className="mb-2 text-lg font-bold text-white">
                                     {medium}
@@ -201,7 +187,6 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                                 ></div>
                             </div>
 
-                            {/* Barra: Baja */}
                             <div className="flex h-full w-12 flex-col items-center justify-end sm:w-16">
                                 <span className="mb-2 text-lg font-bold text-white">
                                     {low}
@@ -216,7 +201,6 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                             </div>
                         </div>
 
-                        {/* 2. Contenedor de las etiquetas (Eje X) */}
                         <div className="mt-3 flex w-full items-center justify-center gap-6 pr-4 pl-4 sm:gap-12">
                             <div className="w-12 text-center sm:w-16">
                                 <span className="text-sm font-medium text-white">
@@ -235,8 +219,6 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                             </div>
                         </div>
                     </div>
-                    {/* -------------------------------------------------------- */}
-                    {/* -------------------------------------------------------- */}
                 </div>
             </div>
         </AppLayout>

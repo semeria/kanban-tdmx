@@ -18,6 +18,7 @@ Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
 Route::put('/kanban/{id}/status', [KanbanController::class, 'updateStatus'])->name('kanban.updateStatus');
 Route::put('/kanban/{id}/priority', [KanbanController::class, 'updatePriority'])->name('kanban.updatePriority');
 Route::put('/kanban/{id}/title', [KanbanController::class, 'updateTitle'])->name('kanban.updateTitle');
+Route::put('/kanban/{id}/assign', [KanbanController::class, 'assignUser']);
 Route::post('/kanban', [KanbanController::class, 'store'])->name('kanban.store');
 Route::delete('/kanban/{id}', [KanbanController::class, 'destroy'])->name('kanban.destroy');
 
@@ -25,6 +26,6 @@ Route::get('/categorias', [CategoryController::class, 'index'])->name('categorie
 Route::post('/categorias', [CategoryController::class, 'store'])->name('categories.store');
 Route::put('/categorias/{id}', [CategoryController::class, 'update'])->name('categories.update');
 
-Route::get('/metricas', [MetricsController::class, 'index'])->name('metrics.index');
+Route::get('/metricas', [MetricsController::class, 'index'])->name('metrics.index')->middleware(['role:administrador|gerencia']);
 
 require __DIR__.'/settings.php';

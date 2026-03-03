@@ -12,21 +12,25 @@ class KanbanController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if ($user->hasRole('administrador')) {
-            $activities = Activity::with(['category', 'user'])->latest()->get();
+        if ($user->hasAnyRole(['administrador', 'gerencia'])) {
+            $activities = Activity::with(['category', 'user', 'assignedUser'])->latest()->get();
         } else {
-
-            $activities = Activity::with(['category', 'user'])
-                ->where('user_id', $user->id)
+            $activities = Activity::with(['category', 'user', 'assignedUser'])
+                ->where(function ($query) use ($user) {
+                    $query->where('assigned_user_id', $user->id) // Tareas que le asignaron los jefes
+                    ->orWhere('user_id', $user->id);       // Tareas personales que él mismo creó
+                })
                 ->latest()
                 ->get();
         }
 
         $categories = Category::all();
+        $users = \App\Models\User::select('id', 'name')->get();
 
         return Inertia::render('Kanban/Board', [
             'activities' => $activities,
-            'categories' => $categories
+            'categories' => $categories,
+            'users' => $users,
         ]);
     }
 
@@ -62,7 +66,7 @@ class KanbanController extends Controller
     public function updatePriority(Request $request, $id)
     {
         $request->validate([
-            'priority' => 'required|in:low,medium,high'
+            'priority' => 'required|in:low,medium,high',
         ]);
 
         $activity = Activity::findOrFail($id);
@@ -71,10 +75,11 @@ class KanbanController extends Controller
 
         return redirect()->back(); // Inertia refrescará los datos sin recargar la página
     }
+
     public function updateTitle(Request $request, $id)
     {
         $request->validate([
-            'title' => 'required|string|max:255'
+            'title' => 'required|string|max:255',
         ]);
 
         $activity = Activity::findOrFail($id);
@@ -84,17 +89,31 @@ class KanbanController extends Controller
         return redirect()->back();
     }
 
+    public function assignUser(Request $request, $id)
+    {
+        // Doble seguridad en el backend: si no tiene el rol, bloqueamos la acción
+        if (!auth()->user()->hasAnyRole(['administrador', 'gerencia'])) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $activity = Activity::findOrFail($id);
+        $activity->update([
+            'assigned_user_id' => $request->assigned_user_id
+        ]);
+
+        return redirect()->back();
+    }
+
     public function destroy($id)
     {
         $activity = Activity::findOrFail($id);
+        $user = auth()->user();
 
-        // Seguridad: Solo el dueño o el administrador pueden borrar
-        if (auth()->user()->hasRole('administrador') || $activity->user_id === auth()->id()) {
+        if ($user->hasAnyRole(['administrador', 'gerencia']) || $activity->user_id === $user->id) {
             $activity->delete();
             return redirect()->back();
         }
 
-        return response()->json(['message' => 'No tienes permiso para eliminar esta tarea'], 403);
+        abort(403, 'No tienes permiso para eliminar esta actividad.');
     }
-
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Activity extends Model
 {
-    protected $fillable = ['user_id', 'category_id', 'title', 'priority', 'status'];
+    protected $fillable = ['user_id', 'category_id', 'title', 'priority', 'status', 'assigned_user_id'];
 
     public function category()
     {
@@ -16,6 +16,11 @@ class Activity extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignedUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
     }
 
 }
