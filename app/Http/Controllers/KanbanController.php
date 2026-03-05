@@ -12,7 +12,7 @@ class KanbanController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if ($user->hasAnyRole(['administrador', 'gerencia'])) {
+        if ($user->hasAnyRole(['administrador'])) {
             $activities = Activity::with(['category', 'user', 'assignedUser'])->latest()->get();
         } else {
             $activities = Activity::with(['category', 'user', 'assignedUser'])
