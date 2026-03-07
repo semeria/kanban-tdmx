@@ -44,4 +44,22 @@ class CategoryController extends Controller
 
         return redirect()->back();
     }
+
+    public function destroy($id)
+    {
+        // Seguridad: Solo los administradores pueden borrar categorías
+        if (!auth()->user()->hasRole(['administrador', 'gerencia'])) {
+            abort(403, 'No tienes permiso para eliminar categorías.');
+        }
+
+        $category = Category::findOrFail($id);
+        
+        // (Opcional pero recomendado) Si no tienes nullOnDelete en tu migración, 
+        // puedes desvincular las actividades manualmente antes de borrar:
+        // \App\Models\Activity::where('category_id', $id)->update(['category_id' => null]);
+
+        $category->delete();
+
+        return redirect()->back();
+    }
 }

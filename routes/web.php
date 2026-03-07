@@ -25,6 +25,7 @@ Route::delete('/kanban/{id}', [KanbanController::class, 'destroy'])->name('kanba
 Route::get('/categorias', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categorias', [CategoryController::class, 'store'])->name('categories.store');
 Route::put('/categorias/{id}', [CategoryController::class, 'update'])->name('categories.update');
+Route::delete('/categorias/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
 Route::get('/metricas', [MetricsController::class, 'index'])->name('metrics.index')->middleware(['role:administrador|gerencia']);
 

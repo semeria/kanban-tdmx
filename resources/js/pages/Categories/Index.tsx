@@ -2,6 +2,21 @@ import { router, useForm, Head } from '@inertiajs/react';
 import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
+import { Trash2 } from 'lucide-react';
+
+const handleDelete = (categoryId: number) => {
+        if (confirm('¿Estás seguro de que deseas eliminar esta categoría? Las tareas que la usen simplemente se quedarán sin etiqueta.')) {
+            router.delete(`/categorias/${categoryId}`, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Si tienes una función de showNotification, úsala aquí. 
+                    // Si no, puedes usar un simple alert o tu sistema de tostadas (toast).
+                    alert('Categoría eliminada correctamente 🗑️'); 
+                },
+                onError: () => alert('Error al eliminar la categoría ❌')
+            });
+        }
+    };
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Categorías', href: '/categorias' },
@@ -89,7 +104,15 @@ export default function CategoriesIndex({ categories = [] }: { categories: any[]
                                     className="w-full max-w-md bg-transparent font-medium text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:bg-white dark:focus:bg-neutral-950 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 py-1 -ml-2 transition-colors"
                                     title="Haz clic para editar"
                                 />
+                                <button 
+                                    onClick={() => handleDelete(category.id)}
+                                    className="ml-2 rounded p-1 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                                    title="Eliminar categoría"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
                             </li>
+                            
                         ))}
                         {categories.length === 0 && (
                             <li className="px-6 py-8 text-center text-sm text-neutral-500">
