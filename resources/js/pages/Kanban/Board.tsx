@@ -104,7 +104,7 @@ export default function Board({
     useEffect(() => {
         const initialColumns = {
             todo: {
-                name: 'Por Hacer',
+                name: 'Por Hacer ahora',
                 items: activities.filter((a: any) => a.status === 'todo'),
             },
             in_progress: {

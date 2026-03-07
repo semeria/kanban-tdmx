@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Target, ListTodo, Clock, CheckCircle2 } from 'lucide-react';
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';
@@ -8,7 +8,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Inicio / Métricas', href: '/metricas' },
 ];
 
-export default function MetricsIndex({ metrics }: { metrics: any }) {
+export default function MetricsIndex({ metrics, gerentes, vps, canViewGerentes, canViewVPs , selectedUserId }: any) {
+    const { auth } = usePage().props as any;
+    const canFilter = auth.roles?.some((role: string) => ['administrador', 'gerencia'].includes(role));
+    
+    const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        router.get('/metricas', 
+            { user_id: e.target.value }, 
+            { preserveState: true, preserveScroll: true, replace: true } 
+        );
+    };
+
     const totalTasks = metrics.total || 0;
     const doneTasks = metrics.done || 0;
     const progressPercentage =
@@ -41,6 +51,49 @@ export default function MetricsIndex({ metrics }: { metrics: any }) {
                         Controla el progreso y estado de las tareas.
                     </p>
                 </div>
+
+                {/* Contenedor de Selectores */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        
+                        {/* SELECT 1: Gerentes (Solo se muestra si tiene el permiso) */}
+                        {canViewGerentes && (
+                            <div className="w-full sm:w-48">
+                                <label className="mb-1 block text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                    Métricas de Gerencia
+                                </label>
+                                <select
+                                    className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                                    value={selectedUserId || ''}
+                                    onChange={handleUserChange}
+                                >
+                                    <option value="">General (Todos)</option>
+                                    {gerentes.map((u: any) => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* SELECT 2: Vacation Planners (Solo se muestra si tiene el permiso) */}
+                        {canViewVPs && (
+                            <div className="w-full sm:w-48">
+                                <label className="mb-1 block text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                    Métricas de VP
+                                </label>
+                                <select
+                                    className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                                    value={selectedUserId || ''}
+                                    onChange={handleUserChange}
+                                >
+                                    <option value="">General (Todos)</option>
+                                    {vps.map((u: any) => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                    </div>
 
                 {/* 1. Tarjetas de Estadísticas (Cantidades) */}
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
