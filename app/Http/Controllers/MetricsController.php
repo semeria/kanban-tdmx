@@ -17,8 +17,8 @@ class MetricsController extends Controller
 
         // 1. Verificamos los permisos de Spatie (El admin siempre puede ver todo)
         $isAdmin = $user->hasRole('administrador');
-        $canViewGerentes = $isAdmin || $user->hasPermissionTo('view metrics gerentes');
-        $canViewVPs = $isAdmin || $user->hasPermissionTo('view metrics vp');
+        $canViewGerentes = $isAdmin || $user->can('view metrics gerentes');
+        $canViewVPs = $isAdmin || $user->can('view metrics vp');
 
         $gerentes = [];
         $vps = [];
