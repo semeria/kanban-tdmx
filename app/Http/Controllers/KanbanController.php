@@ -116,4 +116,20 @@ class KanbanController extends Controller
 
         abort(403, 'No tienes permiso para eliminar esta actividad.');
     }
+
+    public function updateDueDate(Request $request, $id)
+    {
+        $activity = Activity::findOrFail($id);
+        
+        // Verificación de seguridad básica
+        if (!auth()->user()->hasAnyRole(['administrador', 'gerencia']) && $activity->user_id !== auth()->id()) {
+            abort(403, 'No tienes permiso para editar esta tarea.');
+        }
+
+        $activity->update([
+            'due_date' => $request->due_date
+        ]);
+
+        return redirect()->back();
+    }
 }
