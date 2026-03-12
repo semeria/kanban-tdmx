@@ -58,3 +58,5 @@ networks:
 
 volumes:
   db_data: # Este volumen asegura que los datos de MySQL no se borren si apagas el contenedor
+
+# Solo producion
