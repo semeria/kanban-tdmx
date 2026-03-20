@@ -57,7 +57,7 @@ export default function Board({
     const { auth } = usePage().props as any;
 
     const canAssign = auth.roles?.some((role: string) =>
-        ['administrador'].includes(role),
+        ['administrador', 'gerencia'].includes(role),
     );
 
     const canFilter = auth.roles?.some((role: string) =>

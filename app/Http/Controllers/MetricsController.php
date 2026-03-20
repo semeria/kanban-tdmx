@@ -19,9 +19,11 @@ class MetricsController extends Controller
         $isAdmin = $user->hasRole('administrador');
         $canViewGerentes = $isAdmin || $user->can('view metrics gerentes');
         $canViewVPs = $isAdmin || $user->can('view metrics vp');
+        $canViewMarketing = $isAdmin || $user->can('view metrics gerentes');
 
         $gerentes = [];
         $vps = [];
+        $marketing = [];
 
         // 2. Cargamos a los usuarios usando el scope 'role' de Spatie
         if ($canViewGerentes) {
@@ -32,8 +34,12 @@ class MetricsController extends Controller
             $vps = User::role('vacation_planner')->select('id', 'name')->get();
         }
 
+        if ($canViewMarketing) {
+            $marketing = User::role('marketing')->select('id', 'name')->get();
+        }
+
         // 3. Aplicamos el filtro si tiene permiso y eligió a alguien
-        if ($canViewGerentes || $canViewVPs) {
+        if ($canViewGerentes || $canViewVPs || $canViewMarketing) {
             if ($selectedUserId) {
                 $query->where(function ($q) use ($selectedUserId) {
                     $q->where('assigned_user_id', $selectedUserId)
@@ -63,10 +69,12 @@ class MetricsController extends Controller
             'metrics' => $metrics,
             'gerentes' => $gerentes,
             'vps' => $vps,
+            'marketing' => $marketing,
             'selectedUserId' => $selectedUserId,
             // Enviamos los permisos al frontend para saber qué Select mostrar
             'canViewGerentes' => $canViewGerentes,
             'canViewVPs' => $canViewVPs,
+            'canViewMarketing' => $canViewMarketing,
         ]);
     }
 }

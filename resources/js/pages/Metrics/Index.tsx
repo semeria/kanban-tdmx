@@ -8,14 +8,14 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Inicio / Métricas', href: '/metricas' },
 ];
 
-export default function MetricsIndex({ metrics, gerentes, vps, canViewGerentes, canViewVPs , selectedUserId }: any) {
+export default function MetricsIndex({ metrics, gerentes, vps, marketing, canViewGerentes, canViewVPs , canViewMarketing , selectedUserId }: any) {
     const { auth } = usePage().props as any;
     const canFilter = auth.roles?.some((role: string) => ['administrador', 'gerencia'].includes(role));
-    
+
     const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        router.get('/metricas', 
-            { user_id: e.target.value }, 
-            { preserveState: true, preserveScroll: true, replace: true } 
+        router.get('/metricas',
+            { user_id: e.target.value },
+            { preserveState: true, preserveScroll: true, replace: true }
         );
     };
 
@@ -54,7 +54,7 @@ export default function MetricsIndex({ metrics, gerentes, vps, canViewGerentes, 
 
                 {/* Contenedor de Selectores */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                        
+
                         {/* SELECT 1: Gerentes (Solo se muestra si tiene el permiso) */}
                         {canViewGerentes && (
                             <div className="w-full sm:w-48">
@@ -68,6 +68,24 @@ export default function MetricsIndex({ metrics, gerentes, vps, canViewGerentes, 
                                 >
                                     <option value="">General (Todos)</option>
                                     {gerentes.map((u: any) => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {canViewMarketing && (
+                            <div className="w-full sm:w-48">
+                                <label className="mb-1 block text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                    Métricas de Marketing
+                                </label>
+                                <select
+                                    className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                                    value={selectedUserId || ''}
+                                    onChange={handleUserChange}
+                                >
+                                    <option value="">General (Todos)</option>
+                                    {marketing.map((u: any) => (
                                         <option key={u.id} value={u.id}>{u.name}</option>
                                     ))}
                                 </select>
