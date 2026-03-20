@@ -24,9 +24,11 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         hmr: {
-            host: 'localhost', 
+            host: 'localhost',
         },
-        cors: true, 
+        watch: {
+            usePolling: true,
+        },
     },
     esbuild: {
         jsx: 'automatic',
