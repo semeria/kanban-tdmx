@@ -22,7 +22,7 @@ export function AppSidebar() {
             title: 'Métricas',
             href: '/metricas',
             icon: BarChart3,
-            roles: ['administrador', 'gerencia'],
+            roles: ['administrador', 'gerencia', 'marketing'],
         },
         {
             title: 'Tablero Kanban',

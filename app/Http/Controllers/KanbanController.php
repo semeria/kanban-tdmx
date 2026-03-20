@@ -5,49 +5,61 @@ namespace App\Http\Controllers;
 use App\Models\Activity;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\User;
 use Inertia\Inertia;
 
 class KanbanController extends Controller
 {
-    public function index()
+    public function index(Request $request) // <-- Agregamos Request $request
     {
         $user = auth()->user();
 
-        $isAdminOrManager = $user->hasAnyRole(['administrador']);
+        // Verificamos roles y permisos
+        $isAdminOrManager = $user->hasAnyRole(['administrador', 'gerencia']);
         $canViewGerencia = $user->hasPermissionTo('view activities gerencia');
 
+        // Capturamos el ID del usuario que se quiere filtrar
+        $selectedUserId = $request->input('user_id');
+
+        // Iniciamos la consulta base
+        $query = Activity::with(['category', 'user', 'assignedUser']);
+
         if ($isAdminOrManager) {
-            $activities = Activity::with(['category', 'user', 'assignedUser'])->latest()->get();
+            // Si es administrador/gerencia y eligió un usuario en el filtro
+            if ($selectedUserId) {
+                $query->where(function ($q) use ($selectedUserId) {
+                    $q->where('assigned_user_id', $selectedUserId)
+                        ->orWhere('user_id', $selectedUserId);
+                });
+            }
+            // Si no hay filtro, el query sigue limpio y traerá TODO
         } else {
+            // Empleados normales: ven sus tareas y (si tienen permiso) las de gerencia
+            $query->where(function ($q) use ($user, $canViewGerencia) {
+                // Sus propias tareas (asignadas o creadas)
+                $q->where('assigned_user_id', $user->id)
+                    ->orWhere('user_id', $user->id);
 
-            // Los demás ven sus tareas y, opcionalmente, las de gerencia
-            $activities = Activity::with(['category', 'user', 'assignedUser'])
-                ->where(function ($query) use ($user, $canViewGerencia) {
-
-                    // Condición A: Tareas que le asignaron o que él creó
-                    $query->where('assigned_user_id', $user->id)
-                        ->orWhere('user_id', $user->id);
-
-                    // Condición B: Si tiene el permiso, agregamos las tareas de gerencia
-                    if ($canViewGerencia) {
-                        $query->orWhereHas('user', function ($q) {
-                            $q->role('gerencia'); // Creadas por un gerente
-                        })->orWhereHas('assignedUser', function ($q) {
-                            $q->role('gerencia'); // Asignadas a un gerente
-                        });
-                    }
-                })
-                ->latest()
-                ->get();
+                // Tareas de gerencia si tiene el permiso de lectura
+                if ($canViewGerencia) {
+                    $q->orWhereHas('user', function ($sub) {
+                        $sub->role('gerencia');
+                    })->orWhereHas('assignedUser', function ($sub) {
+                        $sub->role('gerencia');
+                    });
+                }
+            });
         }
 
-        $categories = \App\Models\Category::all();
-        $users = \App\Models\User::select('id', 'name')->get();
+        $activities = $query->latest()->get();
+        $categories = Category::all();
+        $users = User::select('id', 'name')->get();
 
         return Inertia::render('Kanban/Board', [
             'activities' => $activities,
             'categories' => $categories,
-            'users' => $users
+            'users' => $users,
+            'selectedUserId' => $selectedUserId // <-- Mandamos el ID seleccionado a React
         ]);
     }
 

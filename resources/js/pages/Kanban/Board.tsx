@@ -46,16 +46,32 @@ export default function Board({
     activities = [],
     categories = [],
     users = [],
+    selectedUserId = [],
 }: {
     activities: any[];
     categories: any[];
     users: any[];
+    selectedUserId: any[];
 }) {
     const [notification, setNotification] = useState<string | null>(null);
     const { auth } = usePage().props as any;
+
     const canAssign = auth.roles?.some((role: string) =>
         ['administrador'].includes(role),
     );
+
+    const canFilter = auth.roles?.some((role: string) =>
+        ['administrador', 'gerencia'].includes(role),
+    );
+
+    const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        router.get(
+            '/kanban',
+            { user_id: e.target.value },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
     const showNotification = (message: string) => {
         setNotification(message);
         setTimeout(() => setNotification(null), 3000);
@@ -348,6 +364,26 @@ export default function Board({
                             {processing ? 'Guardando...' : 'Agregar Tarea'}
                         </button>
                     </form>
+
+                    {canFilter && (
+                        <div className="w-full sm:w-64 mt-5">
+                            <label className="mb-1 block text-xs font-semibold tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+                                Filtrar tablero por usuario
+                            </label>
+                            <select
+                                className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                                value={selectedUserId || ''}
+                                onChange={handleFilterChange}
+                            >
+                                <option value="">Todos los usuarios</option>
+                                {users.map((u: any) => (
+                                    <option key={u.id} value={u.id}>
+                                        {u.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Mensaje si no hay categorías creadas */}
                     {categories.length === 0 && (

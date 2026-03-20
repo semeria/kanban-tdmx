@@ -28,6 +28,6 @@ Route::post('/categorias', [CategoryController::class, 'store'])->name('categori
 Route::put('/categorias/{id}', [CategoryController::class, 'update'])->name('categories.update');
 Route::delete('/categorias/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
-Route::get('/metricas', [MetricsController::class, 'index'])->name('metrics.index')->middleware(['role:administrador|gerencia']);
+Route::get('/metricas', [MetricsController::class, 'index'])->name('metrics.index')->middleware(['role:administrador|gerencia|marketing']);
 
 require __DIR__.'/settings.php';
