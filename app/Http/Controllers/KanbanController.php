@@ -12,25 +12,42 @@ class KanbanController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if ($user->hasAnyRole(['administrador'])) {
+
+        $isAdminOrManager = $user->hasAnyRole(['administrador']);
+        $canViewGerencia = $user->hasPermissionTo('view activities gerencia');
+
+        if ($isAdminOrManager) {
             $activities = Activity::with(['category', 'user', 'assignedUser'])->latest()->get();
         } else {
+
+            // Los demás ven sus tareas y, opcionalmente, las de gerencia
             $activities = Activity::with(['category', 'user', 'assignedUser'])
-                ->where(function ($query) use ($user) {
-                    $query->where('assigned_user_id', $user->id) // Tareas que le asignaron los jefes
-                    ->orWhere('user_id', $user->id);       // Tareas personales que él mismo creó
+                ->where(function ($query) use ($user, $canViewGerencia) {
+
+                    // Condición A: Tareas que le asignaron o que él creó
+                    $query->where('assigned_user_id', $user->id)
+                        ->orWhere('user_id', $user->id);
+
+                    // Condición B: Si tiene el permiso, agregamos las tareas de gerencia
+                    if ($canViewGerencia) {
+                        $query->orWhereHas('user', function ($q) {
+                            $q->role('gerencia'); // Creadas por un gerente
+                        })->orWhereHas('assignedUser', function ($q) {
+                            $q->role('gerencia'); // Asignadas a un gerente
+                        });
+                    }
                 })
                 ->latest()
                 ->get();
         }
 
-        $categories = Category::all();
+        $categories = \App\Models\Category::all();
         $users = \App\Models\User::select('id', 'name')->get();
 
         return Inertia::render('Kanban/Board', [
             'activities' => $activities,
             'categories' => $categories,
-            'users' => $users,
+            'users' => $users
         ]);
     }
 
@@ -120,7 +137,7 @@ class KanbanController extends Controller
     public function updateDueDate(Request $request, $id)
     {
         $activity = Activity::findOrFail($id);
-        
+
         // Verificación de seguridad básica
         if (!auth()->user()->hasAnyRole(['administrador', 'gerencia']) && $activity->user_id !== auth()->id()) {
             abort(403, 'No tienes permiso para editar esta tarea.');
