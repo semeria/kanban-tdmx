@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -54,6 +52,7 @@ services:
 
 networks:
   app_network:
+    name: tdmx
     driver: bridge
 
 volumes:
