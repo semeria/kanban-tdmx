@@ -19,6 +19,7 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        abort(403, 'El registro de nuevos usuarios está cerrado. Contacta al administrador.');
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),

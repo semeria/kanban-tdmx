@@ -16,7 +16,7 @@ class KanbanController extends Controller
 
         // Verificamos roles y permisos
         $isAdminOrManager = $user->hasAnyRole(['administrador', 'gerencia']);
-        $canViewGerencia = $user->hasPermissionTo('view activities gerencia');
+        $canViewGerencia = $user->can('view activities gerencia');
 
         // Capturamos el ID del usuario que se quiere filtrar
         $selectedUserId = $request->input('user_id');
