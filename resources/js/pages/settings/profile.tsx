@@ -1,7 +1,6 @@
 import { Transition } from '@headlessui/react';
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -10,37 +9,30 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { edit } from '@/routes/profile';
-// import { send } from '@/routes/verification';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Profile settings',
+        title: 'Configuración de Perfil',
         href: edit(),
     },
 ];
 
-export default function Profile({
-    mustVerifyEmail,
-    status,
-}: {
-    mustVerifyEmail: boolean;
-    status?: string;
-}) {
-    const { auth } = usePage().props;
+export default function Profile() {
+    const { auth } = usePage().props as any;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Profile settings" />
+            <Head title="Configuración de Perfil" />
 
-            <h1 className="sr-only">Profile settings</h1>
+            <h1 className="sr-only">Configuración de Perfil</h1>
 
             <SettingsLayout>
                 <div className="space-y-6">
                     <Heading
                         variant="small"
-                        title="Profile information"
-                        description="Update your name and email address"
+                        title="Información del Perfil"
+                        description="Actualiza tu nombre y opciones de personalización."
                     />
 
                     <Form
@@ -53,7 +45,7 @@ export default function Profile({
                         {({ processing, recentlySuccessful, errors }) => (
                             <>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="name">Name</Label>
+                                    <Label htmlFor="name">Nombre</Label>
 
                                     <Input
                                         id="name"
@@ -62,7 +54,7 @@ export default function Profile({
                                         name="name"
                                         required
                                         autoComplete="name"
-                                        placeholder="Full name"
+                                        placeholder="Nombre completo"
                                     />
 
                                     <InputError
@@ -71,18 +63,25 @@ export default function Profile({
                                     />
                                 </div>
 
+                                {/* --- CAMPO DE CORREO (BLOQUEADO) --- */}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="email">Email address</Label>
+                                    <Label
+                                        htmlFor="email"
+                                        className="text-neutral-500"
+                                    >
+                                        Correo electrónico
+                                    </Label>
 
                                     <Input
                                         id="email"
                                         type="email"
-                                        className="mt-1 block w-full"
+                                        // Agregamos clases para que se vea gris y con cursor bloqueado
+                                        className="mt-1 block w-full cursor-not-allowed bg-neutral-100 text-neutral-500 opacity-70 focus-visible:ring-0 dark:bg-neutral-800 dark:text-neutral-400"
                                         defaultValue={auth.user.email}
                                         name="email"
-                                        required
+                                        readOnly // <--- Esto bloquea la edición pero permite que se envíe el dato
                                         autoComplete="username"
-                                        placeholder="Email address"
+                                        title="El correo no se puede modificar. Contacta al administrador."
                                     />
 
                                     <InputError
@@ -90,40 +89,46 @@ export default function Profile({
                                         message={errors.email}
                                     />
                                 </div>
+                                {/* ----------------------------------- */}
 
-                                {mustVerifyEmail &&
-                                    auth.user.email_verified_at === null && (
-                                        <div>
-                                            <p className="-mt-4 text-sm text-muted-foreground">
-                                                Your email address is
-                                                unverified.{' '}
-                                                <Link
-                                                    href={send()}
-                                                    as="button"
-                                                    className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                                >
-                                                    Click here to resend the
-                                                    verification email.
-                                                </Link>
-                                            </p>
-
-                                            {status ===
-                                                'verification-link-sent' && (
-                                                <div className="mt-2 text-sm font-medium text-green-600">
-                                                    A new verification link has
-                                                    been sent to your email
-                                                    address.
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                {/* --- NUEVO CAMPO: COLOR DE TEMA --- */}
+                                <div className="mt-4 grid gap-2">
+                                    <Label htmlFor="theme_color">
+                                        Color de personalización
+                                    </Label>
+                                    <div className="flex items-center gap-3">
+                                        <Input
+                                            id="theme_color"
+                                            type="color"
+                                            name="theme_color"
+                                            defaultValue={
+                                                auth.user.theme_color ||
+                                                '#3b82f6'
+                                            }
+                                            className="h-10 w-14 cursor-pointer p-1"
+                                            title="Elige tu color personalizado"
+                                        />
+                                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                                            Selecciona tu color preferido
+                                        </span>
+                                    </div>
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.theme_color}
+                                    />
+                                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                        Este color se usará para personalizar tu
+                                        experiencia visual en la plataforma.
+                                    </p>
+                                </div>
+                                {/* ---------------------------------- */}
 
                                 <div className="flex items-center gap-4">
                                     <Button
                                         disabled={processing}
                                         data-test="update-profile-button"
                                     >
-                                        Save
+                                        Guardar cambios
                                     </Button>
 
                                     <Transition
@@ -133,8 +138,8 @@ export default function Profile({
                                         leave="transition ease-in-out"
                                         leaveTo="opacity-0"
                                     >
-                                        <p className="text-sm text-neutral-600">
-                                            Saved
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                            Guardado
                                         </p>
                                     </Transition>
                                 </div>
@@ -142,8 +147,6 @@ export default function Profile({
                         )}
                     </Form>
                 </div>
-
-                <DeleteUser />
             </SettingsLayout>
         </AppLayout>
     );

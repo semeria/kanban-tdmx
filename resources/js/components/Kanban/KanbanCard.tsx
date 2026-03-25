@@ -1,17 +1,6 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import {
-    User,
-    Star,
-    Zap,
-    Smile,
-    Heart,
-    Coffee,
-    Shield,
-    Rocket,
-    Trash2,
-    Calendar,
-} from 'lucide-react';
+import { User, Star, Zap, Smile, Heart, Coffee, Shield, Rocket, Trash2, Calendar } from 'lucide-react';
 
 const getUserIconAndColor = (userId: number) => {
     const icons = [User, Star, Zap, Smile, Heart, Coffee, Shield, Rocket];
@@ -25,46 +14,60 @@ const getUserIconAndColor = (userId: number) => {
         'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400',
         'bg-teal-100 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400',
     ];
-    return {
-        Icon: icons[userId % icons.length],
-        colorClass: colors[userId % colors.length],
-    };
+    return { Icon: icons[userId % icons.length], colorClass: colors[userId % colors.length] };
 };
 
 export default function KanbanCard({
-    item,
-    index,
-    columnId,
-    users,
-    auth,
-    canAssign,
-    canModifyItem,
-    handleTitleChange,
-    handleDelete,
-    handlePriorityChange,
-    handleAssignUser,
-    handleDueDateChange,
-}: any) {
-    const isOverdue =
-        item.due_date &&
-        new Date(item.due_date) < new Date(new Date().setHours(0, 0, 0, 0));
-    const dateColor =
-        isOverdue && columnId !== 'done'
-            ? 'text-red-500 font-bold dark:text-red-400'
-            : 'text-neutral-500 dark:text-neutral-400';
+                                       item, index, columnId, users, auth, canAssign, canModifyItem,
+                                       handleTitleChange, handleDelete, handlePriorityChange, handleAssignUser, handleDueDateChange
+                                   }: any) {
+
+    // --- 1. LÓGICA DEL SEMÁFORO (COLORES DE FONDO) ---
+    let cardBgColor = 'bg-white border-sidebar-border/50 dark:bg-neutral-950 dark:border-sidebar-border';
+    let dateIconColor = 'text-neutral-500 dark:text-neutral-400';
+
+    if (item.due_date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Desarmamos la fecha manual para evitar bugs de zonas horarias
+        const [y, m, d] = item.due_date.split('T')[0].split('-');
+        const dueDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+
+        const diffTime = dueDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (columnId === 'done') {
+            // Si está terminada, la opacamos (no importa la fecha)
+            cardBgColor = 'bg-neutral-50/50 border-neutral-200 opacity-70 dark:bg-neutral-900/30 dark:border-neutral-800';
+            dateIconColor = 'text-neutral-400';
+        } else if (diffDays < 0) {
+            // Expirada (Rojo)
+            cardBgColor = 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50';
+            dateIconColor = 'text-red-500 font-bold dark:text-red-400';
+        } else if (diffDays <= 2) {
+            // Faltan 2 días o menos (Amarillo)
+            cardBgColor = 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-900/50';
+            dateIconColor = 'text-yellow-600 font-bold dark:text-yellow-500';
+        } else {
+            // A tiempo (Verde)
+            cardBgColor = 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50';
+            dateIconColor = 'text-emerald-600 font-bold dark:text-emerald-500';
+        }
+    } else if (columnId === 'done') {
+        // Tareas sin fecha pero terminadas
+        cardBgColor = 'bg-neutral-50/50 border-neutral-200 opacity-70 dark:bg-neutral-900/30 dark:border-neutral-800';
+    }
 
     return (
-        <Draggable
-            draggableId={item.id.toString()}
-            index={index}
-            isDragDisabled={!canModifyItem(item)}
-        >
+        <Draggable draggableId={item.id.toString()} index={index} isDragDisabled={!canModifyItem(item)}>
             {(provided, snapshot) => (
                 <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    className={`group mb-3 rounded-lg border border-sidebar-border/50 p-4 shadow-sm transition-shadow select-none dark:border-sidebar-border ${snapshot.isDragging ? 'bg-blue-50/50 ring-1 ring-blue-500/50 dark:bg-neutral-800' : 'bg-white dark:bg-neutral-950'}`}
+                    // Aplicamos el color dinámico a la clase principal de la tarjeta
+                    className={`group mb-3 rounded-lg border p-4 shadow-sm transition-shadow select-none ${snapshot.isDragging ? 'bg-blue-50 ring-1 ring-blue-500/50 dark:bg-blue-900/20' : cardBgColor}`}
                     style={{ ...provided.draggableProps.style }}
                 >
                     {/* Título y Basura */}
@@ -72,27 +75,14 @@ export default function KanbanCard({
                         <input
                             type="text"
                             defaultValue={item.title}
-                            onBlur={(e) =>
-                                handleTitleChange(
-                                    item.id,
-                                    e.target.value,
-                                    columnId,
-                                )
-                            }
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    e.currentTarget.blur();
-                                }
-                            }}
-                            className="-ml-1 flex-1 rounded bg-transparent px-1 font-semibold text-neutral-900 transition-colors hover:bg-neutral-100 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus:bg-neutral-950"
+                            onBlur={(e) => handleTitleChange(item.id, e.target.value, columnId)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+                            // Hacemos el input del título transparente para que herede el color de la tarjeta
+                            className="-ml-1 flex-1 rounded bg-transparent px-1 font-semibold text-neutral-900 transition-colors hover:bg-black/5 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-100 dark:hover:bg-white/5 dark:focus:bg-neutral-900"
                             readOnly={!canModifyItem(item)}
                         />
                         {(canAssign || item.user_id === auth.user.id) && (
-                            <button
-                                onClick={() => handleDelete(item.id)}
-                                className="p-1 text-neutral-400 opacity-0 transition-colors group-hover:opacity-100 hover:text-red-500 focus:opacity-100"
-                            >
+                            <button onClick={() => handleDelete(item.id)} className="p-1 text-neutral-400 opacity-0 transition-colors hover:text-red-500 focus:opacity-100 group-hover:opacity-100">
                                 <Trash2 size={14} />
                             </button>
                         )}
@@ -100,41 +90,21 @@ export default function KanbanCard({
 
                     {/* Prioridad */}
                     <div className="mt-3 flex items-center justify-between">
-                        <label className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Prioridad:
-                        </label>
+                        <label className="text-xs text-neutral-500 dark:text-neutral-400">Prioridad:</label>
                         <select
                             value={item.priority}
-                            onChange={(e) =>
-                                handlePriorityChange(
-                                    item.id,
-                                    e.target.value,
-                                    columnId,
-                                )
-                            }
+                            onChange={(e) => handlePriorityChange(item.id, e.target.value, columnId)}
                             disabled={!canModifyItem(item)}
-                            className="rounded border border-neutral-200 bg-transparent px-2 py-1 text-xs text-neutral-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-300"
+                            className="rounded border border-neutral-200/50 bg-white/50 px-2 py-1 text-xs text-neutral-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700/50 dark:bg-black/20 dark:text-neutral-300"
                         >
-                            <option value="low" className="dark:bg-neutral-900">
-                                Baja
-                            </option>
-                            <option
-                                value="medium"
-                                className="dark:bg-neutral-900"
-                            >
-                                Media
-                            </option>
-                            <option
-                                value="high"
-                                className="dark:bg-neutral-900"
-                            >
-                                Alta
-                            </option>
+                            <option value="low" className="dark:bg-neutral-900">Baja</option>
+                            <option value="medium" className="dark:bg-neutral-900">Media</option>
+                            <option value="high" className="dark:bg-neutral-900">Alta</option>
                         </select>
                     </div>
 
-                    {/* Asignación de Usuario */}
-                    <div className="mt-4 flex flex-col gap-2 border-t border-sidebar-border/50 pt-3 dark:border-sidebar-border">
+                    {/* SECCIÓN DE USUARIOS (Creador y Asignado) */}
+                    <div className="mt-4 flex flex-col gap-2 border-t border-black/5 pt-3 dark:border-white/5">
 
                         {/* 1. CREADOR (De:) */}
                         <div className="flex items-center gap-2">
@@ -171,12 +141,11 @@ export default function KanbanCard({
                                     );
                                 })()
                             ) : (
-                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 dark:bg-neutral-800">
+                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-black/5 text-neutral-400 dark:bg-white/5">
                                     <User size={10} strokeWidth={2.5} />
                                 </div>
                             )}
 
-                            {/* Selector o Texto del asignado */}
                             {canAssign ? (
                                 <select
                                     className="h-6 cursor-pointer appearance-none rounded border-transparent bg-transparent py-0 pl-1 pr-6 text-xs font-medium text-neutral-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-transparent dark:text-neutral-400"
@@ -197,23 +166,21 @@ export default function KanbanCard({
                     {/* Categoría y Fecha */}
                     <div className="mt-3 flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                            <Calendar size={12} className={dateColor} />
+                            <Calendar size={12} className={dateIconColor} />
                             <input
                                 type="date"
-                                value={
-                                    item.due_date
-                                        ? item.due_date.split('T')[0]
-                                        : ''
-                                }
-                                onChange={(e) =>
-                                    handleDueDateChange(item.id, e.target.value)
-                                }
+                                value={item.due_date ? item.due_date.split('T')[0] : ''}
+                                onChange={(e) => handleDueDateChange(item.id, e.target.value)}
                                 disabled={!canModifyItem(item)}
-                                className={`cursor-pointer rounded border-none bg-transparent p-0 px-1 text-xs transition-colors hover:bg-neutral-100 focus:ring-0 focus:outline-none dark:hover:bg-neutral-800 ${dateColor}`}
+                                className={`cursor-pointer rounded border-none bg-transparent p-0 px-1 text-xs transition-colors hover:bg-black/5 focus:outline-none focus:ring-0 dark:hover:bg-white/5 ${dateIconColor}`}
                             />
                         </div>
                         {item.category && (
-                            <span className="inline-block rounded-md bg-purple-600 px-2 py-1 text-[10px] font-semibold text-white shadow-sm dark:bg-purple-700">
+                            <span
+                                className="inline-block rounded-md px-2 py-1 text-[10px] font-semibold text-white shadow-sm"
+                                // Aquí inyectamos el color del usuario, o un azul por defecto si no ha elegido uno
+                                style={{ backgroundColor: auth.user.theme_color || '#3b82f6' }}
+                            >
                                 {item.category.name}
                             </span>
                         )}

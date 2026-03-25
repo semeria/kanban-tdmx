@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Activity;
 use App\Models\User;
 use Inertia\Inertia;
+use Carbon\Carbon; // <-- Importante añadir esto
 
 class MetricsController extends Controller
 {
@@ -15,7 +16,33 @@ class MetricsController extends Controller
         $query = Activity::query();
         $selectedUserId = $request->input('user_id');
 
-        // 1. Verificamos los permisos de Spatie (El admin siempre puede ver todo)
+        // --- 1. LÓGICA DE FECHAS (MES Y SEMANA) ---
+        $currentMonth = now()->month;
+        $currentWeek = (int) ceil(now()->day / 7);
+
+        $month = (int) $request->input('month', $currentMonth);
+        $week = (int) $request->input('week', $currentWeek);
+        $year = now()->year;
+
+        // Validamos la semana elegida (entre 1 y 5)
+        $week = max(1, min(5, $week));
+
+        $startDay = (($week - 1) * 7) + 1;
+        $endDay = $week * 7;
+
+        $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+        if ($endDay > $daysInMonth) {
+            $endDay = $daysInMonth;
+        }
+
+        $startDate = Carbon::createFromDate($year, $month, $startDay)->startOfDay();
+        $endDate = Carbon::createFromDate($year, $month, $endDay)->endOfDay();
+
+        // Filtramos las actividades por la fecha de creación
+        $query->whereBetween('created_at', [$startDate, $endDate]);
+        // -------------------------------------------
+
+        // 2. Verificamos los permisos de Spatie
         $isAdmin = $user->hasRole('administrador');
         $canViewGerentes = $isAdmin || $user->can('view metrics gerentes');
         $canViewVPs = $isAdmin || $user->can('view metrics vp');
@@ -25,7 +52,7 @@ class MetricsController extends Controller
         $vps = [];
         $marketing = [];
 
-        // 2. Cargamos a los usuarios usando el scope 'role' de Spatie
+        // 3. Cargamos a los usuarios
         if ($canViewGerentes) {
             $gerentes = User::role('gerencia')->select('id', 'name')->get();
         }
@@ -38,23 +65,23 @@ class MetricsController extends Controller
             $marketing = User::role('marketing')->select('id', 'name')->get();
         }
 
-        // 3. Aplicamos el filtro si tiene permiso y eligió a alguien
+        // 4. Aplicamos el filtro de usuario
         if ($canViewGerentes || $canViewVPs || $canViewMarketing) {
             if ($selectedUserId) {
                 $query->where(function ($q) use ($selectedUserId) {
                     $q->where('assigned_user_id', $selectedUserId)
-                      ->orWhere('user_id', $selectedUserId);
+                        ->orWhere('user_id', $selectedUserId);
                 });
             }
         } else {
-            // Si no tiene permisos de ver a otros, solo ve lo suyo
+            // Si no tiene permisos, solo ve lo suyo
             $query->where(function ($q) use ($user) {
                 $q->where('assigned_user_id', $user->id)
-                  ->orWhere('user_id', $user->id);
+                    ->orWhere('user_id', $user->id);
             });
         }
 
-        // 4. Calculamos las métricas (tu código actual)
+        // 5. Calculamos las métricas
         $metrics = [
             'total' => (clone $query)->count(),
             'todo' => (clone $query)->where('status', 'todo')->count(),
@@ -70,8 +97,12 @@ class MetricsController extends Controller
             'gerentes' => $gerentes,
             'vps' => $vps,
             'marketing' => $marketing,
-            'selectedUserId' => $selectedUserId,
-            // Enviamos los permisos al frontend para saber qué Select mostrar
+            // Enviamos los filtros actuales para que React los seleccione
+            'filters' => [
+                'user_id' => $selectedUserId,
+                'month' => $month,
+                'week' => $week,
+            ],
             'canViewGerentes' => $canViewGerentes,
             'canViewVPs' => $canViewVPs,
             'canViewMarketing' => $canViewMarketing,

@@ -8,30 +8,50 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Inicio / Métricas', href: '/metricas' },
 ];
 
-export default function MetricsIndex({ metrics, gerentes, vps, marketing, canViewGerentes, canViewVPs , canViewMarketing , selectedUserId }: any) {
-    const { auth } = usePage().props as any;
-    const canFilter = auth.roles?.some((role: string) => ['administrador', 'gerencia'].includes(role));
+const MONTHS = [
+    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
+    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
+    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
+    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
+];
 
-    const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        router.get('/metricas',
-            { user_id: e.target.value },
-            { preserveState: true, preserveScroll: true, replace: true }
-        );
+export default function MetricsIndex({ metrics, gerentes, vps, marketing, canViewGerentes, canViewVPs, canViewMarketing, filters }: any) {
+    const { auth } = usePage().props as any;
+
+    // --- MANEJO DE FILTROS ---
+    const handleFilterChange = (filterName: string, value: string | number) => {
+        const newFilters: any = {
+            user_id: filters?.user_id || '',
+            month: filters?.month,
+            week: filters?.week,
+            [filterName]: value
+        };
+
+        // Si cambia el mes, reseteamos a la semana 1 por UX
+        if (filterName === 'month') {
+            newFilters.week = 1;
+        }
+
+        router.get('/metricas', newFilters, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        });
     };
+    // -------------------------
 
     const totalTasks = metrics.total || 0;
     const doneTasks = metrics.done || 0;
-    const progressPercentage =
-        totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+    const progressPercentage = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
     const circleRadius = 70;
     const circleCircumference = 2 * Math.PI * circleRadius;
-    const strokeDashoffset =
-        circleCircumference - (progressPercentage / 100) * circleCircumference;
+    const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
     const high = metrics.priority_high || 0;
     const medium = metrics.priority_medium || 0;
     const low = metrics.priority_low || 0;
-
     const maxPriority = Math.max(high, medium, low) || 1;
 
     const highHeight = (high / maxPriority) * 100;
@@ -52,66 +72,98 @@ export default function MetricsIndex({ metrics, gerentes, vps, marketing, canVie
                     </p>
                 </div>
 
-                {/* Contenedor de Selectores */}
-                    <div className="flex flex-col sm:flex-row gap-3">
+                {/* --- CONTENEDOR DE SELECTORES (Filtros) --- */}
+                <div className="flex flex-col flex-wrap gap-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:flex-row dark:border-neutral-800 dark:bg-neutral-900">
 
-                        {/* SELECT 1: Gerentes (Solo se muestra si tiene el permiso) */}
+                    {/* Filtros de Fecha (Mes y Semana) */}
+                    <div className="flex w-full gap-4 sm:w-auto">
+                        <div className="flex w-1/2 flex-col sm:w-40">
+                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                Mes
+                            </label>
+                            <select
+                                className="w-full rounded-md border border-neutral-300 bg-transparent px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:text-neutral-300"
+                                value={filters?.month || 1}
+                                onChange={(e) => handleFilterChange('month', parseInt(e.target.value))}
+                            >
+                                {MONTHS.map((m) => (
+                                    <option key={m.value} value={m.value} className="dark:bg-neutral-900">{m.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex w-1/2 flex-col sm:w-48">
+                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                Semana
+                            </label>
+                            <select
+                                className="w-full rounded-md border border-neutral-300 bg-transparent px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:text-neutral-300"
+                                value={filters?.week || 1}
+                                onChange={(e) => handleFilterChange('week', parseInt(e.target.value))}
+                            >
+                                <option value={1} className="dark:bg-neutral-900">Semana 1 (Días 1-7)</option>
+                                <option value={2} className="dark:bg-neutral-900">Semana 2 (Días 8-14)</option>
+                                <option value={3} className="dark:bg-neutral-900">Semana 3 (Días 15-21)</option>
+                                <option value={4} className="dark:bg-neutral-900">Semana 4 (Días 22-28)</option>
+                                <option value={5} className="dark:bg-neutral-900">Semana 5 (Resto)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Divisor vertical (solo visible en desktop) */}
+                    <div className="hidden w-px bg-neutral-200 sm:block dark:bg-neutral-700"></div>
+
+                    {/* Filtros de Usuario (Los que ya tenías) */}
+                    <div className="flex flex-1 flex-col gap-4 sm:flex-row">
                         {canViewGerentes && (
                             <div className="w-full sm:w-48">
-                                <label className="mb-1 block text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                                    Métricas de Gerencia
+                                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                    Gerencia
                                 </label>
                                 <select
-                                    className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-                                    value={selectedUserId || ''}
-                                    onChange={handleUserChange}
+                                    className="w-full rounded-md border border-neutral-300 bg-transparent px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:text-neutral-300"
+                                    value={filters?.user_id || ''}
+                                    onChange={(e) => handleFilterChange('user_id', e.target.value)}
                                 >
                                     <option value="">General (Todos)</option>
-                                    {gerentes.map((u: any) => (
-                                        <option key={u.id} value={u.id}>{u.name}</option>
-                                    ))}
+                                    {gerentes.map((u: any) => <option key={u.id} value={u.id} className="dark:bg-neutral-900">{u.name}</option>)}
                                 </select>
                             </div>
                         )}
 
                         {canViewMarketing && (
                             <div className="w-full sm:w-48">
-                                <label className="mb-1 block text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                                    Métricas de Marketing
+                                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                    Marketing
                                 </label>
                                 <select
-                                    className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-                                    value={selectedUserId || ''}
-                                    onChange={handleUserChange}
+                                    className="w-full rounded-md border border-neutral-300 bg-transparent px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:text-neutral-300"
+                                    value={filters?.user_id || ''}
+                                    onChange={(e) => handleFilterChange('user_id', e.target.value)}
                                 >
                                     <option value="">General (Todos)</option>
-                                    {marketing.map((u: any) => (
-                                        <option key={u.id} value={u.id}>{u.name}</option>
-                                    ))}
+                                    {marketing.map((u: any) => <option key={u.id} value={u.id} className="dark:bg-neutral-900">{u.name}</option>)}
                                 </select>
                             </div>
                         )}
 
-                        {/* SELECT 2: Vacation Planners (Solo se muestra si tiene el permiso) */}
                         {canViewVPs && (
                             <div className="w-full sm:w-48">
-                                <label className="mb-1 block text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                                    Métricas de VP
+                                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                    Vacation Planner
                                 </label>
                                 <select
-                                    className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-                                    value={selectedUserId || ''}
-                                    onChange={handleUserChange}
+                                    className="w-full rounded-md border border-neutral-300 bg-transparent px-3 py-1.5 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-700 dark:text-neutral-300"
+                                    value={filters?.user_id || ''}
+                                    onChange={(e) => handleFilterChange('user_id', e.target.value)}
                                 >
                                     <option value="">General (Todos)</option>
-                                    {vps.map((u: any) => (
-                                        <option key={u.id} value={u.id}>{u.name}</option>
-                                    ))}
+                                    {vps.map((u: any) => <option key={u.id} value={u.id} className="dark:bg-neutral-900">{u.name}</option>)}
                                 </select>
                             </div>
                         )}
-
                     </div>
+                </div>
+                {/* ------------------------------------------------ */}
 
                 {/* 1. Tarjetas de Estadísticas (Cantidades) */}
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
