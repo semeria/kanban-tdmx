@@ -69,6 +69,7 @@ class KanbanController extends Controller
             'title' => 'required|string|max:255',
             'priority' => 'required|in:low,medium,high',
             'category_id' => 'required|exists:categories,id',
+            'due_date' => 'nullable|date',
         ]);
         $validated['user_id'] = auth()->id() ?? 1;
 
