@@ -4,62 +4,107 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Category;
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class KanbanController extends Controller
 {
-    public function index(Request $request) // <-- Agregamos Request $request
+    public function index(Request $request)
     {
         $user = auth()->user();
-
-        // Verificamos roles y permisos
-        $isAdminOrManager = $user->hasAnyRole(['administrador', 'gerencia']);
-        $canViewGerencia = $user->can('view activities gerencia');
-
-        // Capturamos el ID del usuario que se quiere filtrar
         $selectedUserId = $request->input('user_id');
 
-        // Iniciamos la consulta base
         $query = Activity::with(['category', 'user', 'assignedUser']);
 
-        if ($isAdminOrManager) {
-            // Si es administrador/gerencia y eligió un usuario en el filtro
+        // ==========================================
+        // NIVEL 1: ADMINISTRADOR
+        // ==========================================
+        if ($user->hasRole('administrador')) {
+
+            // 1. Carga a TODOS los usuarios en el select
+            $users = User::select('id', 'name')->get();
+
+            // 2. Filtra las actividades (Ve TODO, a menos que elija a alguien)
             if ($selectedUserId) {
                 $query->where(function ($q) use ($selectedUserId) {
                     $q->where('assigned_user_id', $selectedUserId)
                         ->orWhere('user_id', $selectedUserId);
                 });
             }
-            // Si no hay filtro, el query sigue limpio y traerá TODO
-        } else {
-            // Empleados normales: ven sus tareas y (si tienen permiso) las de gerencia
-            $query->where(function ($q) use ($user, $canViewGerencia) {
-                // Sus propias tareas (asignadas o creadas)
-                $q->where('assigned_user_id', $user->id)
-                    ->orWhere('user_id', $user->id);
 
-                // Tareas de gerencia si tiene el permiso de lectura
-                if ($canViewGerencia) {
-                    $q->orWhereHas('user', function ($sub) {
-                        $sub->role('gerencia');
-                    })->orWhereHas('assignedUser', function ($sub) {
-                        $sub->role('gerencia');
+            // ==========================================
+            // NIVEL 2: GERENCIA (DINÁMICO CON SPATIE)
+            // ==========================================
+        } elseif ($user->hasRole('gerencia')) {
+
+            // 1. Buscamos todos los roles que existen en el sistema
+            $allRoles = \Spatie\Permission\Models\Role::pluck('name');
+            $rolesQuePuedeVer = [];
+
+            // 2. Revisamos a cuáles de esos roles tiene permiso de ver este usuario
+            foreach ($allRoles as $roleName) {
+                if ($user->can('ver rol '.$roleName)) {
+                    $rolesQuePuedeVer[] = $roleName;
+                }
+            }
+
+            // 3. Spatie trae a los usuarios SOLO de los roles autorizados
+            $users = User::role($rolesQuePuedeVer)->select('id', 'name')->get();
+
+            // 4. Extraemos solo los IDs de esos usuarios para filtrar las actividades
+            $managedUserIds = $users->pluck('id')->toArray();
+
+            // 5. Filtramos las actividades de manera segura
+            if ($selectedUserId) {
+                // Seguridad: Verificamos que el ID que pasaron por la URL realmente pertenezca a su equipo
+                if (in_array($selectedUserId, $managedUserIds) || $selectedUserId == $user->id) {
+                    $query->where(function ($q) use ($selectedUserId) {
+                        $q->where('assigned_user_id', $selectedUserId)
+                            ->orWhere('user_id', $selectedUserId);
+                    });
+                } else {
+                    // Si intenta poner el ID de un admin en la URL, lo ignoramos y cargamos lo de su equipo
+                    $query->where(function ($q) use ($managedUserIds, $user) {
+                        $q->whereIn('assigned_user_id', $managedUserIds)
+                            ->orWhereIn('user_id', $managedUserIds)
+                            ->orWhere('assigned_user_id', $user->id)
+                            ->orWhere('user_id', $user->id);
                     });
                 }
+            } else {
+                // Si no hay filtro, ve las tareas de todo su equipo asignado + las suyas propias
+                $query->where(function ($q) use ($managedUserIds, $user) {
+                    $q->whereIn('assigned_user_id', $managedUserIds)
+                        ->orWhereIn('user_id', $managedUserIds)
+                        ->orWhere('assigned_user_id', $user->id)
+                        ->orWhere('user_id', $user->id);
+                });
+            }
+
+            // ==========================================
+            // NIVEL 3: EMPLEADOS (RESTO)
+            // ==========================================
+        } else {
+
+            // 1. Solo se ven a sí mismos en el select
+            $users = User::where('id', $user->id)->select('id', 'name')->get();
+
+            // 2. Solo ven sus propias tareas
+            $query->where(function ($q) use ($user) {
+                $q->where('assigned_user_id', $user->id)
+                    ->orWhere('user_id', $user->id);
             });
         }
 
         $activities = $query->latest()->get();
         $categories = Category::all();
-        $users = User::select('id', 'name')->get();
 
         return Inertia::render('Kanban/Board', [
             'activities' => $activities,
             'categories' => $categories,
             'users' => $users,
-            'selectedUserId' => $selectedUserId // <-- Mandamos el ID seleccionado a React
+            'selectedUserId' => $selectedUserId,
         ]);
     }
 
@@ -122,13 +167,13 @@ class KanbanController extends Controller
     public function assignUser(Request $request, $id)
     {
         // Doble seguridad en el backend: si no tiene el rol, bloqueamos la acción
-        if (!auth()->user()->hasAnyRole(['administrador', 'gerencia'])) {
+        if (! auth()->user()->hasAnyRole(['administrador', 'gerencia'])) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $activity = Activity::findOrFail($id);
         $activity->update([
-            'assigned_user_id' => $request->assigned_user_id
+            'assigned_user_id' => $request->assigned_user_id,
         ]);
 
         return redirect()->back();
@@ -141,6 +186,7 @@ class KanbanController extends Controller
 
         if ($user->hasAnyRole(['administrador', 'gerencia']) || $activity->user_id === $user->id) {
             $activity->delete();
+
             return redirect()->back();
         }
 
@@ -152,12 +198,12 @@ class KanbanController extends Controller
         $activity = Activity::findOrFail($id);
 
         // Verificación de seguridad básica
-        if (!auth()->user()->hasAnyRole(['administrador', 'gerencia']) && $activity->user_id !== auth()->id()) {
+        if (! auth()->user()->hasAnyRole(['administrador', 'gerencia']) && $activity->user_id !== auth()->id()) {
             abort(403, 'No tienes permiso para editar esta tarea.');
         }
 
         $activity->update([
-            'due_date' => $request->due_date
+            'due_date' => $request->due_date,
         ]);
 
         return redirect()->back();
