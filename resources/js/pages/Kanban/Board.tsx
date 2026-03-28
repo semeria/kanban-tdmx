@@ -99,6 +99,24 @@ export default function Board({
         );
     };
 
+    const handleDescriptionChange = (activityId: number, newDescription: string, columnId: string) => {
+        const currentDesc = columns[columnId].items.find((i: any) => i.id === activityId).description;
+
+        // Evitamos hacer peticiones al servidor si no cambió nada
+        if (newDescription === currentDesc) return;
+
+        const updatedColumns = { ...columns };
+        const itemIndex = updatedColumns[columnId].items.findIndex((i: any) => i.id === activityId);
+        updatedColumns[columnId].items[itemIndex].description = newDescription;
+        setColumns(updatedColumns);
+
+        router.put(`/kanban/${activityId}/description`, { description: newDescription }, {
+            preserveScroll: true,
+            // Opcional: Puedes quitar esta notificación si sientes que es mucho spam visual
+            onSuccess: () => showNotification('Descripción actualizada 📝')
+        });
+    };
+
     const handleDelete = (activityId: number) => {
         if (confirm('¿Estás seguro de eliminar esta actividad?')) {
             router.delete(`/kanban/${activityId}`, {
@@ -262,6 +280,9 @@ export default function Board({
                                                             }
                                                             handleDelete={
                                                                 handleDelete
+                                                            }
+                                                            handleDescriptionChange={
+                                                                handleDescriptionChange
                                                             }
                                                             handlePriorityChange={
                                                                 handlePriorityChange

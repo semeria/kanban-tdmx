@@ -21,6 +21,7 @@ Route::put('/kanban/{id}/status', [KanbanController::class, 'updateStatus'])->na
 Route::put('/kanban/{id}/priority', [KanbanController::class, 'updatePriority'])->name('kanban.updatePriority');
 Route::put('/kanban/{id}/title', [KanbanController::class, 'updateTitle'])->name('kanban.updateTitle');
 Route::put('/kanban/{id}/assign', [KanbanController::class, 'assignUser']);
+Route::put('/kanban/{id}/description', [KanbanController::class, 'updateDescription']);
 Route::post('/kanban', [KanbanController::class, 'store'])->name('kanban.store');
 Route::delete('/kanban/{id}', [KanbanController::class, 'destroy'])->name('kanban.destroy');
 Route::put('/kanban/{id}/due-date', [KanbanController::class, 'updateDueDate']);

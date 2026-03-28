@@ -208,4 +208,18 @@ class KanbanController extends Controller
 
         return redirect()->back();
     }
+
+    public function updateDescription(Request $request, $id)
+    {
+        $activity = Activity::findOrFail($id);
+        $request->validate([
+            'description' => 'nullable|string|max:1000',
+        ]);
+
+        $activity->update([
+            'description' => $request->description,
+        ]);
+
+        return redirect()->back();
+    }
 }
