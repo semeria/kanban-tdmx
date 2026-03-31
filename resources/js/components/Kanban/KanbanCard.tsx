@@ -288,14 +288,13 @@ export default function KanbanCard({
                         {item.category && (
                             <span
                                 className="inline-block rounded-md px-2 py-1 text-[10px] font-semibold text-white shadow-sm"
-                                // Aquí inyectamos el color del usuario, o un azul por defecto si no ha elegido uno
+                                // Aquí inyectamos el color del CREADOR de la actividad, con un azul por defecto
                                 style={{
-                                    backgroundColor:
-                                        auth.user.theme_color || '#3b82f6',
+                                    backgroundColor: item.user?.theme_color || '#3b82f6',
                                 }}
                             >
-                                {item.category.name}
-                            </span>
+        {item.category.name}
+    </span>
                         )}
                     </div>
                 </div>
